@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
-
+//hhh
 type AIConfigHandler struct {
 	aiService *services.AIService
 	log       *logger.Logger
