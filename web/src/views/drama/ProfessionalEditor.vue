@@ -804,7 +804,10 @@
                             :key="'prev-' + img.id"
                             class="reference-item"
                             :class="{
-                              selected: selectedImagesForVideo.includes(img.id),
+                              selected:
+                                selectedReferenceMode === 'first_last'
+                                  ? selectedImagesForVideo[0] === img.id
+                                  : selectedImagesForVideo.includes(img.id),
                             }"
                             style="
                               position: relative;
@@ -813,7 +816,11 @@
                               overflow: hidden;
                               cursor: pointer;
                             "
-                            @click="selectPreviousLastFrame(img)"
+                            @click="
+                              selectedReferenceMode === 'first_last'
+                                ? selectFirstFrameImage(img.id)
+                                : selectPreviousLastFrame(img)
+                            "
                           >
                             <el-image
                               :src="getImageUrl(img)"
@@ -863,10 +870,17 @@
                           :key="img.id"
                           class="reference-item"
                           :class="{
-                            selected: selectedImagesForVideo.includes(img.id),
+                            selected:
+                              selectedReferenceMode === 'first_last'
+                                ? selectedImagesForVideo[0] === img.id
+                                : selectedImagesForVideo.includes(img.id),
                           }"
                           style="position: relative"
-                          @click="handleImageSelect(img.id)"
+                          @click="
+                            selectedReferenceMode === 'first_last'
+                              ? selectFirstFrameImage(img.id)
+                              : handleImageSelect(img.id)
+                          "
                         >
                           <el-image
                             :src="getImageUrl(img)"
@@ -945,10 +959,17 @@
                           :key="img.id"
                           class="reference-item"
                           :class="{
-                            selected: selectedImagesForVideo.includes(img.id),
+                            selected:
+                              selectedReferenceMode === 'first_last'
+                                ? selectedLastImageForVideo === img.id
+                                : selectedImagesForVideo.includes(img.id),
                           }"
                           style="position: relative"
-                          @click="handleImageSelect(img.id)"
+                          @click="
+                            selectedReferenceMode === 'first_last'
+                              ? selectLastFrameImage(img.id)
+                              : handleImageSelect(img.id)
+                          "
                         >
                           <el-image
                             :src="getImageUrl(img)"
@@ -1266,13 +1287,7 @@
                     >
                       <div class="reference-mode-title">单图参考</div>
                       <div style="display: inline-block">
-                        <div
-                          class="image-slot"
-                          @click="
-                            selectedImagesForVideo.length > 0 &&
-                            removeSelectedImage(selectedImagesForVideo[0])
-                          "
-                        >
+                          <div class="image-slot">
                           <img
                             v-if="selectedImageObjects[0]"
                             :src="getImageUrl(selectedImageObjects[0])"
@@ -1283,11 +1298,12 @@
                             <el-icon :size="32" color="#c0c4cc">
                               <Plus />
                             </el-icon>
-                            <div class="slot-hint">点击上方选择图片</div>
+                            <div class="slot-hint">请在上方图片中选择</div>
                           </div>
                           <div
                             v-if="selectedImageObjects[0]"
                             class="image-slot-remove"
+                            @click.stop="removeSelectedImage(selectedImagesForVideo[0])"
                           >
                             <el-icon :size="16" color="#fff">
                               <Close />
@@ -1313,13 +1329,7 @@
                       >
                         <div>
                           <div class="frame-label">首帧</div>
-                          <div
-                            class="image-slot"
-                            @click="
-                              firstFrameSlotImage &&
-                              removeSelectedImage(firstFrameSlotImage.id)
-                            "
-                          >
+                          <div class="image-slot">
                             <img
                               v-if="firstFrameSlotImage"
                               :src="firstFrameSlotImage.image_url"
@@ -1334,11 +1344,12 @@
                               <el-icon :size="32" color="#c0c4cc">
                                 <Plus />
                               </el-icon>
-                              <div class="slot-hint">选择首帧</div>
+                              <div class="slot-hint">请在上方“首帧”中选择</div>
                             </div>
                             <div
                               v-if="firstFrameSlotImage"
                               class="image-slot-remove"
+                              @click.stop="removeSelectedImage(firstFrameSlotImage.id)"
                             >
                               <el-icon :size="16" color="#fff">
                                 <Close />
@@ -1351,13 +1362,7 @@
                         </el-icon>
                         <div>
                           <div class="frame-label">尾帧</div>
-                          <div
-                            class="image-slot"
-                            @click="
-                              lastFrameSlotImage &&
-                              removeSelectedImage(lastFrameSlotImage.id)
-                            "
-                          >
+                          <div class="image-slot">
                             <img
                               v-if="lastFrameSlotImage"
                               :src="lastFrameSlotImage.image_url"
@@ -1372,11 +1377,12 @@
                               <el-icon :size="32" color="#c0c4cc">
                                 <Plus />
                               </el-icon>
-                              <div class="slot-hint">选择尾帧</div>
+                              <div class="slot-hint">请在上方“尾帧”中选择</div>
                             </div>
                             <div
                               v-if="lastFrameSlotImage"
                               class="image-slot-remove"
+                              @click.stop="removeSelectedImage(lastFrameSlotImage.id)"
                             >
                               <el-icon :size="16" color="#fff">
                                 <Close />
@@ -3362,6 +3368,44 @@ const handleImageSelect = (imageId: number) => {
     default:
       ElMessage.warning("未知的参考图模式");
   }
+};
+
+const selectFirstFrameImage = (imageId: number) => {
+  if (!selectedReferenceMode.value) {
+    ElMessage.warning("请先选择参考图模式");
+    return;
+  }
+
+  if (!currentModelCapability.value) {
+    ElMessage.warning("请先选择视频生成模型");
+    return;
+  }
+
+  if (selectedImagesForVideo.value[0] === imageId) {
+    selectedImagesForVideo.value = [];
+    return;
+  }
+
+  selectedImagesForVideo.value = [imageId];
+};
+
+const selectLastFrameImage = (imageId: number) => {
+  if (!selectedReferenceMode.value) {
+    ElMessage.warning("请先选择参考图模式");
+    return;
+  }
+
+  if (!currentModelCapability.value) {
+    ElMessage.warning("请先选择视频生成模型");
+    return;
+  }
+
+  if (selectedLastImageForVideo.value === imageId) {
+    selectedLastImageForVideo.value = null;
+    return;
+  }
+
+  selectedLastImageForVideo.value = imageId;
 };
 
 // 预览图片（使用已导入的 getImageUrl 工具函数来获取正确的图片URL）

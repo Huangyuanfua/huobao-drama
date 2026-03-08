@@ -1,40 +1,65 @@
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = 'Stop'
 
-$ProjectRoot = "E:\project\huobao-drama"
-$ToolsRoot = "E:\tools"
+$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+$LogsDir = Join-Path $ProjectRoot 'logs'
 
-$GoBin = "E:\tools\runtimes\go1.26.1\go\bin"
-$NodeBin = "E:\tools\runtimes\node-v20.19.6-win-x64\node-v20.19.6-win-x64"
-$FfmpegBin = "E:\tools\runtimes\ffmpeg-essentials\ffmpeg-8.0.1-essentials_build\bin"
+$GoBin = 'D:\tools\go\bin'
+$NodeBin = 'D:\tools\node'
+$FfmpegBin = 'D:\tools\ffmpeg\bin'
 
 $env:PATH = "$GoBin;$NodeBin;$FfmpegBin;$env:PATH"
-$env:GOPATH = "$ToolsRoot\gopath"
-$env:GOMODCACHE = "$ToolsRoot\gopath\pkg\mod"
-$env:GOCACHE = "$ToolsRoot\gocache"
-$env:NPM_CONFIG_CACHE = "$ToolsRoot\npm-cache"
-$env:NPM_CONFIG_REGISTRY = "https://registry.npmmirror.com"
-$env:GOPROXY = "https://goproxy.cn,direct"
-$env:GOSUMDB = "sum.golang.google.cn"
-$env:TEMP = "$ToolsRoot\tmp"
-$env:TMP = "$ToolsRoot\tmp"
+$env:GOPROXY = 'https://goproxy.cn,direct'
+$env:HTTP_PROXY = 'http://127.0.0.1:7897'
+$env:HTTPS_PROXY = 'http://127.0.0.1:7897'
 
-New-Item -ItemType Directory -Force -Path $env:GOPATH, $env:GOMODCACHE, $env:GOCACHE, $env:NPM_CONFIG_CACHE, $env:TEMP | Out-Null
+New-Item -ItemType Directory -Force -Path $LogsDir | Out-Null
 
-$RunDir = Join-Path $ProjectRoot ".run"
-New-Item -ItemType Directory -Force -Path $RunDir | Out-Null
+function Test-PortListening {
+    param([int]$Port)
 
-$backendOut = Join-Path $RunDir "backend.out.log"
-$backendErr = Join-Path $RunDir "backend.err.log"
-$frontendOut = Join-Path $RunDir "frontend.out.log"
-$frontendErr = Join-Path $RunDir "frontend.err.log"
+    return [bool](Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue)
+}
 
-$backend = Start-Process -FilePath "go" -ArgumentList @("run", "main.go") -WorkingDirectory $ProjectRoot -RedirectStandardOutput $backendOut -RedirectStandardError $backendErr -PassThru
-$frontend = Start-Process -FilePath "npm.cmd" -ArgumentList @("run", "dev") -WorkingDirectory (Join-Path $ProjectRoot "web") -RedirectStandardOutput $frontendOut -RedirectStandardError $frontendErr -PassThru
+if (-not (Test-Path (Join-Path $ProjectRoot 'configs\config.yaml'))) {
+    Copy-Item (Join-Path $ProjectRoot 'configs\config.example.yaml') (Join-Path $ProjectRoot 'configs\config.yaml')
+}
 
-Start-Sleep -Seconds 4
+if (-not (Test-Path (Join-Path $ProjectRoot '.env'))) {
+    Copy-Item (Join-Path $ProjectRoot '.env.example') (Join-Path $ProjectRoot '.env')
+}
 
-Write-Output "Backend PID: $($backend.Id)"
-Write-Output "Frontend PID: $($frontend.Id)"
-Write-Output "Backend URL: http://localhost:5678"
-Write-Output "Frontend URL: http://localhost:3012"
+$backendLog = Join-Path $LogsDir 'backend.log'
+$frontendLog = Join-Path $LogsDir 'frontend.log'
 
+if (-not (Test-PortListening -Port 5678)) {
+    Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+        '-NoProfile',
+        '-WindowStyle', 'Minimized',
+        '-Command',
+        "$env:PATH='$GoBin;$NodeBin;$FfmpegBin;'+`$env:PATH; `$env:GOPROXY='https://goproxy.cn,direct'; `$env:HTTP_PROXY='http://127.0.0.1:7897'; `$env:HTTPS_PROXY='http://127.0.0.1:7897'; Set-Location '$ProjectRoot'; go run main.go *>> '$backendLog'"
+    ) | Out-Null
+}
+
+if (-not (Test-PortListening -Port 3012)) {
+    Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+        '-NoProfile',
+        '-WindowStyle', 'Minimized',
+        '-Command',
+        "$env:PATH='$NodeBin;'+`$env:PATH; `$env:HTTP_PROXY='http://127.0.0.1:7897'; `$env:HTTPS_PROXY='http://127.0.0.1:7897'; Set-Location '$ProjectRoot\web'; npm run dev *>> '$frontendLog'"
+    ) | Out-Null
+}
+
+$frontendReady = $false
+for ($index = 0; $index -lt 30; $index++) {
+    Start-Sleep -Seconds 1
+    if (Test-PortListening -Port 3012) {
+        $frontendReady = $true
+        break
+    }
+}
+
+Start-Process 'http://127.0.0.1:3012'
+
+if (-not $frontendReady) {
+    Write-Host 'Services are still starting; refresh the browser in a few seconds.'
+}

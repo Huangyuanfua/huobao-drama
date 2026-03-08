@@ -1,7 +1,15 @@
-$ErrorActionPreference = "SilentlyContinue"
+$ErrorActionPreference = 'SilentlyContinue'
 
-Get-Process -Name main | Stop-Process -Force
-Get-Process -Name node | Where-Object { $_.Path -like "E:\tools\runtimes\node-v20.19.6-win-x64*" } | Stop-Process -Force
+$projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 
-Write-Output "Stopped huobao backend/frontend processes."
+$backendConnections = Get-NetTCPConnection -State Listen -LocalPort 5678 -ErrorAction SilentlyContinue
+if ($backendConnections) {
+    $backendConnections | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force }
+}
 
+$frontendConnections = Get-NetTCPConnection -State Listen -LocalPort 3012 -ErrorAction SilentlyContinue
+if ($frontendConnections) {
+    $frontendConnections | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force }
+}
+
+Write-Host "Stopped services for $projectRoot"
