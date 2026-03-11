@@ -17,6 +17,7 @@ func SetupRouter(cfg *config.Config, db *gorm.DB, log *logger.Logger, localStora
 	r.Use(gin.Recovery())
 	r.Use(middlewares2.LoggerMiddleware(log))
 	r.Use(middlewares2.CORSMiddleware(cfg.Server.CORSOrigins))
+	r.Use(middlewares2.OperationLogMiddleware(db, log))
 
 	// 静态文件服务（用户上传的文件）
 	r.Static("/static", cfg.Storage.LocalPath)
@@ -56,6 +57,7 @@ func SetupRouter(cfg *config.Config, db *gorm.DB, log *logger.Logger, localStora
 	audioExtractionHandler := handlers2.NewAudioExtractionHandler(log, cfg.Storage.LocalPath)
 	settingsHandler := handlers2.NewSettingsHandler(cfg, log)
 	propHandler := handlers2.NewPropHandler(db, cfg, log, aiService, imageGenService)
+	operationLogHandler := handlers2.NewOperationLogHandler(db, log)
 
 	api := r.Group("/api/v1")
 	{
@@ -229,6 +231,11 @@ func SetupRouter(cfg *config.Config, db *gorm.DB, log *logger.Logger, localStora
 		{
 			settings.GET("/language", settingsHandler.GetLanguage)
 			settings.PUT("/language", settingsHandler.UpdateLanguage)
+		}
+
+		operationLogs := api.Group("/operation-logs")
+		{
+			operationLogs.GET("", operationLogHandler.ListOperationLogs)
 		}
 	}
 

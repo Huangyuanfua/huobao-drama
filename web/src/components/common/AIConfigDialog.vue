@@ -16,6 +16,10 @@
             <el-icon><MagicStick /></el-icon>
             <span>一键配置火宝</span>
           </el-button>
+          <el-button size="small" @click="goToOperationLogs">
+            <el-icon><Document /></el-icon>
+            <span>{{ $t("operationLog.title") }}</span>
+          </el-button>
           <el-button type="primary" size="small" @click="showCreateDialog">
             <el-icon><Plus /></el-icon>
             <span>{{ $t("aiConfig.addConfig") }}</span>
@@ -250,13 +254,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from "vue";
+import { useRouter } from "vue-router";
 import {
   ElMessage,
   ElMessageBox,
   type FormInstance,
   type FormRules,
 } from "element-plus";
-import { Plus, MagicStick } from "@element-plus/icons-vue";
+import { Plus, MagicStick, Document } from "@element-plus/icons-vue";
 import { aiAPI } from "@/api/ai";
 import type {
   AIServiceConfig,
@@ -279,6 +284,8 @@ const visible = computed({
   get: () => props.modelValue,
   set: (val) => emit("update:modelValue", val),
 });
+
+const router = useRouter();
 
 const activeTab = ref<AIServiceType>("text");
 const loading = ref(false);
@@ -679,6 +686,13 @@ const handleSubmit = async () => {
 const handleTabChange = (tabName: string | number) => {
   activeTab.value = tabName as AIServiceType;
   loadConfigs();
+};
+
+const goToOperationLogs = () => {
+  visible.value = false;
+  editDialogVisible.value = false;
+  quickSetupVisible.value = false;
+  router.push("/settings/operation-logs");
 };
 
 const handleProviderChange = () => {

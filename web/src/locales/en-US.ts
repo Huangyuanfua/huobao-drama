@@ -44,6 +44,7 @@
     selectAll: 'Select All',
     loading: 'Loading...',
     success: 'Success',
+    failed: 'Failed',
     error: 'Error',
     warning: 'Warning',
     info: 'Info',
@@ -69,6 +70,23 @@
     languageSwitchItem2: 'Conversations with AI models will use the selected language',
     languageSwitchItem3: 'Already generated content will not be automatically updated and needs to be regenerated',
     theme: 'Theme'
+  },
+  operationLog: {
+    title: 'Operation Logs',
+    subtitle: 'Review system actions and API calls',
+    module: 'Module',
+    action: 'Action',
+    api: 'API',
+    requestData: 'Request Data',
+    result: 'Result',
+    errorMessage: 'Error Message',
+    userId: 'User ID',
+    timeRange: 'Time Range',
+    startTime: 'Start Time',
+    endTime: 'End Time',
+    refresh: 'Refresh',
+    view: 'View',
+    total: 'Total {count} records'
   },
   aiConfig: {
     title: 'AI Service Configuration',

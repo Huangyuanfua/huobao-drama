@@ -88,6 +88,23 @@ export default {
     language: '语言',
     theme: '主题'
   },
+  operationLog: {
+    title: '操作记录',
+    subtitle: '查看系统操作与接口调用记录',
+    module: '模块',
+    action: '操作',
+    api: '接口',
+    requestData: '请求参数',
+    result: '结果',
+    errorMessage: '失败原因',
+    userId: '用户ID',
+    timeRange: '时间范围',
+    startTime: '开始时间',
+    endTime: '结束时间',
+    refresh: '刷新',
+    view: '查看',
+    total: '共 {count} 条记录'
+  },
   aiConfig: {
     title: 'AI 服务配置',
     addConfig: '添加配置',

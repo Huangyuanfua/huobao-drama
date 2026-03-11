@@ -9,6 +9,10 @@
         :back-text="$t('common.back')"
       >
         <template #actions>
+          <el-button @click="goToOperationLogs">
+            <el-icon><Document /></el-icon>
+            <span>{{ $t("operationLog.title") }}</span>
+          </el-button>
           <el-button type="primary" @click="showCreateDialog">
             <el-icon><Plus /></el-icon>
             <span>{{ $t("aiConfig.addConfig") }}</span>
@@ -180,7 +184,7 @@ import {
   type FormInstance,
   type FormRules,
 } from "element-plus";
-import { Plus, ArrowLeft } from "@element-plus/icons-vue";
+import { Plus, Document } from "@element-plus/icons-vue";
 import { aiAPI } from "@/api/ai";
 import { PageHeader } from "@/components/common";
 import type {
@@ -652,6 +656,10 @@ const resetForm = () => {
 
 const goBack = () => {
   router.back();
+};
+
+const goToOperationLogs = () => {
+  router.push("/settings/operation-logs");
 };
 
 onMounted(() => {
